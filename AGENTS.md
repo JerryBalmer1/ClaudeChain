@@ -224,8 +224,15 @@ Query commands never answer from a halted chain. They print the status to stderr
 - Before pushing: `pnpm typecheck && pnpm lint && pnpm test && pnpm self`, `git status` clean of
   artifacts, and a secret scan over the tracked tree (`npx --yes @secretlint/quick-start "**/*"`, or an
   equivalent scanner).
-- Agents push branches and open PRs. **Jerry merges `main`.** Agents never merge.
-- CI (`.github/workflows/ci.yml`, Ubuntu + Windows): install (frozen), typecheck, lint, test, self.
+- Branch flow: `claude/<topic>` (or another agent prefix) → PR into `develop` → PR `develop` → `main`.
+  Merge commits only (no squash, no rebase), so every merged commit keeps its hash.
+- Agents push branches and open PRs. **Jerry merges `main`.** An agent merges, into `develop` or `main`,
+  only when Jerry says so in the current session, and only after CI is green on the PR head.
+- CI (`.github/workflows/ci.yml`, Ubuntu + Windows, on PRs and on pushes to `develop` and `main`):
+  install (frozen), typecheck, lint, test, self.
+- Hashed docs: a doc listed in `tests/unit/docs-hash.test.ts` has a `<name>.sha256` record beside it
+  (`sha256sum` format). Changing the doc means changing the record in the same commit, or the suite fails.
+  Currently: `docs/GROK_CONVO.md`, the Jerry × Grok fingerprint ideas mapped onto what the code does.
 
 ## 11. Known limitations
 
@@ -304,3 +311,9 @@ Each entry: **what** was decided, **why**, and **rejected** alternatives.
     pushing the implementation straight to `main`.
 24. **No license file; `"private": true`, `"license": "UNLICENSED"`.** Why: licensing is the owner's call.
 25. **Ledger's snake is not ported.** Why: ClaudeChain makes no model calls. See `docs/GENESIS_AUDIT.md`.
+26. **`develop` branch added** (2026-09-26, on Jerry's instruction). It was created at the PR #1 merge
+    commit `1458042`, identical to `main` at that moment. Why: Jerry asked for feature → `develop` →
+    `main`. Rejected: feature branches straight into `main`.
+27. **Doc hashes are enforced by a test, not only recorded.** Why: a `.sha256` file that nothing checks is
+    a claim, while a test that fails on drift is evidence. The hash sits beside the doc because a file cannot
+    contain its own hash. Rejected: embedding the hash in the doc; recording it only in a commit message.
